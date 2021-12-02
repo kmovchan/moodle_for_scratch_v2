@@ -1,0 +1,19 @@
+#Php version
+php_version: '7.4'
+#The number of child processes
+max_children: '256'
+#The number of child processes created on startup
+start_servers: '20'
+#The desired minimum number of idle server processes.
+min_spare_servers: '10'
+#The desired maximum number of idle server processes.
+max_spare_servers: '30'
+#The number of requests each child process should execute before respawning.
+max_requests: '1000'
+
+php_fpm_emergency_restart_threshold: '10'
+php_fpm_emergency_restart_interval: '1m'
+php_fpm_process_control_timeout: '10s'
+php_fpm_rlimit_files: '10000'
+
+

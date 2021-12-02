@@ -1,0 +1,11 @@
+---
+destin_folder: /var/www/html
+#moodle_http_data_directory: 
+moodle_git_version: MOODLE_311_STABLE
+nginx_user: www-data
+nginx_sites:
+ - name: moodle.eleks.com
+nginx_configs:
+ - gzip
+ - performance
+ - security

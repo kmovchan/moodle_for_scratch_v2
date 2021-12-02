@@ -1,0 +1,17 @@
+- name: Install Nginx for moodle
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Build hosts file (backups will be made)
+    lineinfile:
+      dest: /etc/hosts
+      insertafter: "^127.0.0.1 localhost"
+      line: "{{ item }}"
+    with_items:
+      - "{{ ip_node01 }} {{ hostname_node01 }}"
+      - "{{ ip_node02 }} {{ hostname_node02 }}"
+    #  when: ip_address is defined
+    # notify:
+    #- restart hostname
+    #- restart systemd-logind

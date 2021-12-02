@@ -1,0 +1,31 @@
+user = www-data
+group = www-data
+
+; The address on which to accept FastCGI requests.
+; Valid syntaxes are:
+;   'ip.add.re.ss:port'    - to listen on a TCP socket to a specific IPv4 address on
+;                            a specific port;
+;   '[ip:6:addr:ess]:port' - to listen on a TCP socket to a specific IPv6 address on
+;                            a specific port;
+;   'port'                 - to listen on a TCP socket to all addresses
+;                            (IPv6 and IPv4-mapped) on a specific port;
+;   '/path/to/unix/socket' - to listen on a unix socket.
+; Note: This value is mandatory.
+listen = /run/php/php7.4-fpm.sock
+
+; Set listen(2) backlog.
+; Default Value: 511 (-1 on FreeBSD and OpenBSD)
+;listen.backlog = 511
+
+; Set permissions for unix socket, if one is used. In Linux, read/write
+; permissions must be set in order to allow connections from a web server. Many
+; BSD-derived systems allow connections regardless of permissions. The owner
+; and group can be specified either by name or by their numeric IDs.
+; Default Values: user and group are set as the running user
+;                 mode is set to 0660
+listen.owner = www-data
+listen.group = www-data
+;listen.mode = 0660
+pm = static
+pm.max_children = 256
+pm.max_requests = 1000

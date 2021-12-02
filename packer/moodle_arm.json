@@ -1,0 +1,38 @@
+{
+  "variables": {
+    "aws_access_key": "{{ env `AWS_ACCESS_KEY_ID` }}",
+    "aws_secret_key": "{{ env `AWS_SECRET_ACCESS_KEY` }}",
+    "aws_region":     "{{ env `AWS_DEFAULT_REGION` }}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region":     "{{user `aws_region`}}",
+    "source_ami_filter": {
+                "filters": {
+                      "virtualization-type": "hvm",
+                      "name": "ubuntu/images/*ubuntu-focal-20.04-arm64-server-*",  
+                      "root-device-type": "ebs"
+                },
+                "owners": ["099720109477"],
+                "most_recent": true
+            },
+    "instance_type": "t4g.micro",
+    "ssh_username": "ubuntu",
+    "ami_name": "moodle-server-arm {{timestamp}}",
+    "associate_public_ip_address": true
+  }],
+  "provisioners": [
+     {
+       "type": "ansible",
+       "command": "ansible-playbook",
+       "playbook_file": "./ansible_moodle_arm/playbook.yml",
+
+       "ansible_env_vars": [
+           "ANSIBLE_CONFIG=./ansible_moodle_arm/ansible.cfg",
+           "ANSIBLE_ROLES_PATH=./ansible_moodle_arm/roles"
+       ]
+    }
+  ]
+}

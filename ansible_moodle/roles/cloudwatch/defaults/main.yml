@@ -1,0 +1,2 @@
+cw_agent_s3_url: https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+cw_config_path: /opt/aws/amazon-cloudwatch-agent/bin/config.json

@@ -1,0 +1,136 @@
+---
+  - name: Modify repository
+    apt_repository:
+      repo: "{{ item }}"
+      update_cache: yes
+      state: present
+    with_items:
+       - "ppa:ondrej/nginx"
+       - "ppa:ondrej/php"
+
+  - name: Install nginx and dependencies
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+      cache_valid_time: 3600
+      dpkg_options: 'force-confnew,force-confdef'
+    with_items:
+     - nginx
+     - nginx-extras
+    notify: restart nginx
+
+  - name: Delete example site and legacy configs
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /etc/nginx/sites-enabled/default
+      - /etc/nginx/sites-available/default
+#      - /etc/nginx/common/static.conf
+    notify: restart nginx
+
+  - name: Install php and dependencies
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+     - php7.4
+     - php7.4-fpm
+     - php7.4-pspell
+     - php7.4-curl
+     - php7.4-gd
+     - php7.4-intl
+     - php7.4-mysql
+     - php7.4-xml
+     - php7.4-xmlrpc
+     - php7.4-mbstring
+     - php7.4-soap
+     - php7.4-zip
+     - php7.4-redis
+    notify: restart php7.4-fpm
+
+
+  - name: Start Apache and PHP.
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+       - nginx
+       - php7.4-fpm
+
+  - name: get moodle repository
+    #become_user: www-data
+    git:
+      repo: "https://git.in.moodle.com/moodle/moodle.git"
+      dest: /var/www/html/moodle
+      version: "{{ moodle_git_version }}"
+#  - name: Extract moodle into /var/www/html
+#    unarchive:
+#      src: /tmp/moodle-3.9.1.tgz
+#      dest: /var/www/html
+#      remote_src: True
+
+  - name: change permissions
+    file:
+     dest: /var/www/html/moodle
+     owner: "{{ nginx_user }}"
+     group: "{{ nginx_user }}"
+     mode: "u=rwX,g=rX,o=rX"
+     recurse: yes
+
+  - name: Create config dirs
+    file:
+      path: /var/www/html/moodledata/
+      state: directory
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+      mode: 0777
+  #- name: Ensure correct configuration file exists
+  #  template:
+  #    src: config.php.j2
+  #    dest: /var/www/moodle/config.php
+  #    mode: 0644
+  - name: Execute installation script
+    become: yes
+    become_user: www-data
+    command: |
+      /usr/bin/php admin/cli/install.php
+      --wwwroot={{ moodle_external_url }}
+       --dataroot={{ moodle_data_dir }}
+    --dbtype=mysqli
+    --dbhost=localhost
+    --dbname={{ moodle_db.name }}
+    --dbuser={{ moodle_db.user }}
+    --dbpass={{ moodle_db.pass }}
+    --dbsocket=/var/run/mysqld/mysqld.sock
+    --fullname=Moodle
+    --shortname=Moodle
+    --summary=Moodle
+    --adminuser={{ moodle_admin.name }}
+    --adminpass={{ moodle_admin.pass }}
+    --adminemail={{ moodle_admin.mail }}
+    --lang=en
+    --non-interactive
+    --agree-license
+  args:
+    creates: /var/www/moodle/config.php
+    chdir: /var/www/moodle
+
+  - name: Create site config
+    template:
+      src: "moodle.j2"
+      dest: "/etc/nginx/sites-available/moodle.eleks.com"
+      owner: root
+      group: root
+      mode: "u+rw,g+rw,o+r"
+    notify:
+     - restart nginx
+
+
+  - name: Enable site config
+    file:
+      src: "/etc/nginx/sites-available/{{ item.name }}"
+      dest: "/etc/nginx/sites-enabled/{{ item.name }}"
+      state: link
+    with_items: '{{ nginx_sites }}'
+    notify:
+     - restart nginx

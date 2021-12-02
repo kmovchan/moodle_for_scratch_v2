@@ -1,0 +1,60 @@
+---
+  - name: Copy www.conf
+    copy: 
+      src: "www.conf"
+      dest: "/etc/php/7.4/fpm/pool.d/www.conf" 
+      owner: root
+      group: root
+      mode: "u=rw,g=r,o=r"
+    notify: restart php7.4-fpm
+  #- name: Create php pool config
+  #  template:
+  #    src: "www.conf.j2"
+  #    dest: "/etc/php/7.4/fpm/pool.d/www.conf"
+  #    owner: root
+  #    group: root
+  #    mode: "u=rw,g=r,o=r"
+  #  notify: restart php7.4-fpm
+  
+  - name: update php-fpm config
+    template:
+      src: "php-fpm.conf.j2"
+      dest: "/etc/php/7.4/fpm/php-fpm.conf"
+      owner: root
+      group: root
+      #mode: "u=rw,g=r,o=r"
+      mode: "0644"
+    notify: restart php7.4-fpm
+  
+  - name: Set max_input_vars for CLI
+    lineinfile:
+        dest: /etc/php/7.4/fpm/php.ini
+        regexp: "max_input_vars ="
+        line: "max_input_vars = 5000"
+  
+  #- name: Set opcache for CLI
+  #  lineinfile:
+  #      dest: /etc/php/7.4/fpm/php.ini
+  #      regexp: "opcache.revalidate_freq ="
+  #      line: "opcache.revalidate_freq = 60" 
+  # 
+  # - name: Set memory_limit for CLI
+  #  lineinfile:
+  #      dest: /etc/php/7.4/fpm/php.ini
+  #      regexp: "memory_limit ="
+  #      line: "memory_limit = 256"
+
+  - name: Copy php7.4-fpm-watchdog
+    copy: src=php7.4-fpm-watchdog dest=/usr/local/bin/ owner=root group=root mode="u+rwx,g+rwx,o+x"
+  
+  - cron: minute="*/5"
+        name="PHP7.4-FPM watchdog"
+        user="root"
+        job="/usr/local/bin/php7.4-fpm-watchdog"
+        cron_file="php7.4-fpm-watchdog"
+  
+  - name: restart php7.4-fpm
+    service:
+      name: php7.4-fpm
+      state: restarted
+      enabled: yes

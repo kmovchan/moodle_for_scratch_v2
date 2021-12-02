@@ -1,0 +1,11 @@
+---
+- name: Install Nginx and moodle
+  hosts: all
+  gather_facts: no
+  become: yes
+
+  roles:
+    - baseline
+    - cloudwatch
+    - moodle
+    - php

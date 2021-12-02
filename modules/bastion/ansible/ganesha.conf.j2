@@ -1,0 +1,36 @@
+# create new
+NFS_CORE_PARAM {
+    # possible to mount with NFSv3 to NFSv4 Pseudo path
+    mount_path_pseudo = true;
+    # NFS protocol
+    Protocols = 3,4;
+}
+EXPORT_DEFAULTS {
+    # default access mode
+    Access_Type = RW;
+}
+EXPORT {
+    # uniq ID
+    Export_Id = 101;
+    # mount path of Gluster Volume
+    Path = "/vol_replica";
+    FSAL {
+    	# any name
+        name = GLUSTER;
+        # hostname or IP address of this Node
+        hostname="{{ ip_node }}";
+        #hostname="node01";
+        # Gluster volume name
+        volume="vol_replica";
+    }
+    # rconfig for root Squash
+    Squash="No_root_squash";
+    # NFSv4 Pseudo path
+    Pseudo="/vol_replica";
+    # allowed security options
+    SecType = "sys";
+}
+LOG {
+    # default log level
+    Default_Log_Level = WARN;
+}

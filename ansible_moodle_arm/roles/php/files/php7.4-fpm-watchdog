@@ -1,0 +1,7 @@
+#!/bin/bash
+
+alwaysup=`ps aux | grep -v grep | grep -v watchdog | grep -c 'php-fpm'`
+if [ $alwaysup -le 0 ]
+then
+    service php7.4-fpm start
+fi

@@ -1,0 +1,175 @@
+---
+  - name: Modify repository
+    apt_repository:
+      repo: "{{ item }}"
+      update_cache: yes
+      state: present
+    with_items:
+       - "ppa:ondrej/nginx"
+       - "ppa:ondrej/php"
+       - "ppa:gluster/glusterfs-7"
+
+  - name: Install nginx and dependencies
+    apt:
+      name:
+        - nginx
+        - nginx-extras
+        - glusterfs-client
+        - acl
+        - collectd
+      state: present
+    notify: restart nginx
+
+  - name: Delete example site and legacy configs
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /etc/nginx/sites-enabled/default
+      - /etc/nginx/sites-available/default
+#      - /etc/nginx/common/static.conf
+    notify: restart nginx
+
+  - name: Install php and dependencies
+    apt:
+      name:
+        - php7.4
+        - php7.4-fpm
+        - php7.4-pspell
+        - php7.4-curl
+        - php7.4-gd
+        - php7.4-intl
+        - php7.4-mysql
+        - php7.4-xml
+        - php7.4-xmlrpc
+        - php7.4-mbstring
+        - php7.4-soap
+        - php7.4-zip
+        - php7.4-redis
+      state: present
+    notify: restart php7.4-fpm
+
+
+  - name: Start Nginx and PHP.
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+       - nginx
+       - php7.4-fpm
+       
+  - name: Create config moodle
+    file:
+      path: /var/www/html/moodle
+      state: directory
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+      mode: "u=rwX,g=rX,o=rX"
+
+  - name: get moodle repository
+    become_user: "{{ nginx_user }}"
+    git:
+      repo: "https://git.in.moodle.com/moodle/moodle.git"
+      dest: /var/www/html/moodle
+      version: "{{ moodle_git_version }}"
+  #- name: Extract moodle into /var/www/html
+  #  unarchive:
+  #    src: /tmp/moodle.tar.gz
+  #    dest: /var/www/html
+  #    remote_src: True
+  
+  #Use with new moodle version
+  - name: Download VPL plugin
+    get_url:
+      url: https://moodle.org/plugins/download.php/24287/mod_vpl_moodle311_2021052513.zip
+      dest: /tmp/mod_vpl_moodle311_2021052513.zip
+  
+  - name: Extract moodle into /var/www/html
+    unarchive:
+      src: /tmp/mod_vpl_moodle311_2021052513.zip
+      dest: /var/www/html/moodle/mod
+      remote_src: True
+
+  - name: change permissions
+    file:
+     dest: /var/www/html/moodle
+     owner: "{{ nginx_user }}"
+     group: "{{ nginx_user }}"
+     mode: "u=rwX,g=rX,o=rX"
+     recurse: yes
+  
+  - name: configure moodle
+    template:
+      src: config.php.j2
+      #dest: "{{ moodle_httpd_data_directory }}/moodle/config.php"
+      dest: /var/www/html/moodle/config.php
+      mode: "0640"
+
+  - name: Create config dirs
+    file:
+      path: /var/www/html/moodledata/
+      state: directory
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+      mode: 0777
+
+  - name: Create localcache dirs
+    file:
+      path: /var/www/moodle/localcache
+      state: directory
+      owner: "{{ nginx_user }}"
+      group: "{{ nginx_user }}"
+      mode: "u+rw,g+rx,o+rx" 
+
+  - name: Create cache dir for nginx
+    file:
+      path: /var/cache/nginx/client_temp
+      state: directory
+      owner: "{{ nginx_user }}"
+      #group: "{{ nginx_user }}"
+      mode: "u+rw,g+rx,o+rx"
+
+  - name: Remove apache2 package
+    apt:
+      name: apache2
+      autoremove: yes
+      state: absent
+      
+  - name: Create site config
+    template:
+      src: "moodle.j2"
+      dest: "/etc/nginx/sites-available/moodle.eleks.com"
+      owner: root
+      group: root
+      mode: "u+rw,g+rw,o+r"
+    notify:
+     - restart nginx
+
+  - name: Create nginx config
+    template:
+      src: "nginx.conf.j2"
+      dest: "/etc/nginx/nginx.conf"
+      owner: root
+      group: root
+      mode: 644
+    notify:
+     - restart nginx  
+
+  - name: Configure nginx
+    template:
+      src: conf.d/{{item}}.conf
+      dest: /etc/nginx/conf.d/{{item}}.conf
+      owner: root
+      group: root
+      mode: 0644
+    with_flattened:
+     - "{{ nginx_configs }}"
+    notify: 
+    - restart nginx
+
+  - name: Enable site config
+    file:
+      src: "/etc/nginx/sites-available/{{ item.name }}"
+      dest: "/etc/nginx/sites-enabled/{{ item.name }}"
+      state: link
+    with_items: '{{ nginx_sites }}'
+    notify:
+     - restart nginx
