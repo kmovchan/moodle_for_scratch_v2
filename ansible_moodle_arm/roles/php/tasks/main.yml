@@ -22,7 +22,6 @@
       dest: "/etc/php/7.4/fpm/php-fpm.conf"
       owner: root
       group: root
-      #mode: "u=rw,g=r,o=r"
       mode: "0644"
     notify: restart php7.4-fpm
   
@@ -38,11 +37,17 @@
   #      regexp: "opcache.revalidate_freq ="
   #      line: "opcache.revalidate_freq = 60" 
   # 
-  #- name: Set memory_limit for CLI
-  #  lineinfile:
-  #      dest: /etc/php/7.4/fpm/php.ini
-  #      regexp: "memory_limit ="
-  #      line: "memory_limit = 256"
+  - name: Set memory_limit for CLI
+    lineinfile:
+        dest: /etc/php/7.4/fpm/php.ini
+        regexp: "memory_limit ="
+        line: "memory_limit = 256"
+
+  - name: Set memory_limit for CLI
+    lineinfile:
+        dest: /etc/php/7.4/fpm/php.ini
+        regexp: "upload_max_filesize ="
+        line: "upload_max_filesize = 100M"      
 
   - name: Copy php7.4-fpm-watchdog
     copy: src=php7.4-fpm-watchdog dest=/usr/local/bin/ owner=root group=root mode="u+rwx,g+rwx,o+x"
