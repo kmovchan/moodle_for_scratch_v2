@@ -54,7 +54,7 @@ variable "gluster_instance_type" {
 
 variable "db_instance_class" {
   description = "DB type"
-  default = "db.t3.small"
+  default = "db.m6g.xlarge"
 }
 
 variable "redis_node_type" {
