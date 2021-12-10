@@ -42,7 +42,6 @@ resource "aws_autoscaling_group" "vpl-internal-asg" {
   min_size             = 1
   max_size             = 2
   health_check_type    = "EC2"
-  force_delete         = true
   termination_policies = ["NewestInstance"]
   vpc_zone_identifier  = var.private_subnet_ids
 

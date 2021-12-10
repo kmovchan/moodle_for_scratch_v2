@@ -97,14 +97,6 @@ resource "aws_launch_configuration" "box-dev" {
   user_data       = base64encode(data.template_file.user_data.rendered)
   security_groups = [var.bastion_security_group_id]
 
-
-  connection {
-    type = "ssh"
-    user = "ubuntu"
-    private_key = file("~/Downloads/aws-test.pem")
-    host        = self.public_ip
-
-  }
   lifecycle {
     create_before_destroy = true
   }
@@ -117,7 +109,6 @@ resource "aws_autoscaling_group" "box-asg" {
   min_size             = 2
   max_size             = 10
   health_check_type    = "EC2"
-  force_delete         = true
   termination_policies = ["NewestInstance"]
   vpc_zone_identifier  = var.private_subnet_ids
   #vpc_zone_identifier = [aws_subnet.public_subnets[0].id, aws_subnet.public_subnets[1].id]
